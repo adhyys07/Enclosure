@@ -1,0 +1,258 @@
+    :root {
+      --bg: #120b08;
+      --bg-alt: #1c120d;
+      --card: #261812;
+      --border: #ffb703;
+      --text: #fff4ec;
+      --muted: #f2c6a0;
+      --accent: #ff8c42;
+      --accent2: #ffd166;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, #3a1f14, transparent 40%),
+        radial-gradient(circle at 85% 20%, #4a250f, transparent 45%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    /* HERO */
+    .hero {
+      padding: 90px 20px 120px;
+      text-align: center;
+    }
+
+    .ysws-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 2px dashed var(--accent);
+      border-radius: 14px;
+      transform: rotate(-2deg);
+      font-family: 'Patrick Hand', cursive;
+      color: var(--accent);
+      margin-bottom: 20px;
+      background: rgba(255,140,66,0.08);
+    }
+
+    h1 {
+      font-family: 'Patrick Hand', cursive;
+      font-size: clamp(3.2rem, 6vw, 4.6rem);
+      margin: 10px 0;
+      letter-spacing: 1px;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 0 auto 22px;
+      font-size: 1.15rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero .sub {
+      font-size: 0.95rem;
+      color: #e7a96c;
+      margin-bottom: 36px;
+      font-style: italic;
+    }
+
+    /* BUTTONS */
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: 'Patrick Hand', cursive;
+      padding: 14px 28px;
+      font-size: 1.15rem;
+      border-radius: 18px;
+      border: 2px solid var(--border);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #1a0f0a;
+      cursor: pointer;
+      transform: rotate(-1deg);
+      box-shadow: 5px 5px 0 #000;
+      transition: 0.2s;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: var(--accent2);
+    }
+
+    .btn:hover {
+      transform: rotate(1deg) translateY(-2px);
+      box-shadow: 7px 7px 0 #000;
+    }
+
+    /* SECTION */
+    .section {
+      padding: 90px 20px;
+    }
+
+    .container {
+      max-width: 1150px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 2.7rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .section-note {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 50px;
+      font-size: 1rem;
+    }
+
+    /* CARDS */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 26px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 28px;
+      border-radius: 24px;
+      border: 2px dashed var(--border);
+      box-shadow: 6px 6px 0 #000;
+      transform: rotate(-1.2deg);
+      transition: 0.2s;
+    }
+
+    .card:nth-child(even) {
+      transform: rotate(1.4deg);
+    }
+
+    .card:hover {
+      transform: rotate(0deg) translateY(-5px);
+    }
+
+    .card h3 {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(255,183,3,0.15);
+      color: var(--accent2);
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    /* GALLERY */
+    .gallery-box {
+      height: 170px;
+      border-radius: 20px;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          #2b160e,
+          #2b160e 12px,
+          #341b10 12px,
+          #341b10 24px
+        );
+      border: 2px dashed var(--accent);
+      box-shadow: 6px 6px 0 #000;
+      transform: rotate(-1deg);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      font-family: 'Patrick Hand', cursive;
+      color: var(--muted);
+      border-top: 2px dashed var(--border);
+    }
+
+    .faq{
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap:30px;
+        align-items: start;
+    }
+
+    .faq-questions {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .faq-q {
+        font-family: 'Patrick Hand', cursive;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 2px dashed var(--border);
+        background: var(--card);
+        box-shadow: 5px 5px 0 #000;
+        cursor: pointer;
+        transform: rotate(-1deg);
+        transition: 0.2s;
+        color: var(--accent2);
+    }
+
+    .faq-q:hover {
+        transform: rotate(0deg) translateY(-2px);
+    }
+
+    .faq-q.active {
+        background: linear-gradient(135deg, var(--accent),var(--accent2));
+        color:#1a0f0a;
+    }
+
+    .faq-answers {
+    background: var(--card);
+    border: 2px dashed var(--border);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 6px 6px 0 #000;
+    transform: rotate(1deg);
+  }
+
+  .faq-answers h3 {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+
+  .faq-answers p {
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 1rem;
+  }
+   @media (max-width: 800px) {
+    .faq {
+      grid-template-columns: 1fr;
+    }
+
+    .faq-answers {
+      transform: rotate(0deg);
+    }
+  }
+    
