@@ -10,10 +10,11 @@
 <body>
   <section class="hero">
     <div class="ysws-badge">Hack Club · You Ship, We Ship</div>
-    <h1>ENCLOSURE</h1>
+    <img class="hero-logo" src="assets/logo.png" alt="Enclosure logo">
     <p>
-      Design a <b>custom phone or tablet cover</b> in CAD.
+      <b>Design your cover,we 3D-print and ship it !
       Make it protective, weird, minimal, chunky, or cursed.
+      </b>
     </p>
     <div class="sub">You design it → we 3D print it → we ship it to you.</div>
 
@@ -73,34 +74,83 @@
       <h2>Things Other People Made</h2>
       <div class="section-note">expect questionable design choices</div>
 
-      <div class="grid">
-        <div class="gallery-box"></div>
-        <div class="gallery-box"></div>
-        <div class="gallery-box"></div>
-        <div class="gallery-box"></div>
+      <div class="gallery-locked">
+        <div class="grid">
+          <div class="gallery-box"></div>
+          <div class="gallery-box"></div>
+          <div class="gallery-box"></div>
+          <div class="gallery-box"></div>
+        </div>
+        <div class="lock-overlay">🔒 Coming soon</div>
       </div>
     </div>
   </section>
 
   <section class="section" id="rules">
     <div class="container">
-      <h2>The Rules (sorry)</h2>
+      <h2>REQUIREMENTS </h2>
       <div class="section-note">we don’t like them either, but printers do</div>
+      <div class="rules">
+        <div class="rule-card">
+          <div class="rule-icon">🧪</div>
+          <div class="rule-body">
+            <h3>Original design only</h3>
+            <p>Make something uniquely yours. No remixes of other people’s models.</p>
+            <span class="rule-tag">keep it yours</span>
+          </div>
+        </div>
 
-      <div class="grid">
-        <div class="card">Original enclosure design only</div>
-        <div class="card">No AI-generated CAD</div>
-        <div class="card">Fusion or Onshape required</div>
-        <div class="card">Must be printable without supports</div>
-        <div class="card">Size limits apply</div>
-        <div class="card">Hack Club age rules apply</div>
+        <div class="rule-card">
+          <div class="rule-icon">🙅‍♂️</div>
+          <div class="rule-body">
+            <h3>No AI-generated CAD</h3>
+            <p>Hand-made in Fusion or Onshape. We want your brain, not a prompt.</p>
+            <span class="rule-tag">human-made</span>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-icon">🛠️</div>
+          <div class="rule-body">
+            <h3>Fusion or Onshape</h3>
+            <p>Submit native files or exports from these tools for the smoothest review.</p>
+            <span class="rule-tag">supported CAD</span>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-icon">🧱</div>
+          <div class="rule-body">
+            <h3>No supports needed</h3>
+            <p>Design so it prints cleanly without extra supports. Think about overhangs.</p>
+            <span class="rule-tag">print-friendly</span>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-icon">📏</div>
+          <div class="rule-body">
+            <h3>Stay within size</h3>
+            <p>Keep your enclosure within the posted build volume to avoid scaling.</p>
+            <span class="rule-tag">fit the bed</span>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-icon">🎒</div>
+          <div class="rule-body">
+            <h3>Hack Club age rules</h3>
+            <p>Standard Hack Club participation guidelines still apply. Keep it friendly.</p>
+            <span class="rule-tag">play nice</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="section">
     <div class="container">
-        <h2>FAQ</h2>
+        <h2>FAQS</h2>
         <div class="section-note">Questions you keep asking </div>
     </div>
 
@@ -146,7 +196,7 @@
       "Is this actually free?":
         "Yes. This is a Hack Club You Ship, We Ship program. We cover printing and shipping.",
       "More Questions?":
-        "If you have more questions, join <a href='https://hackclub.enterprise.slack.com/archives/C092D99G1RU' target='_blank' rel='noopener noreferrer'>#enclosure</a>."
+        "If you have more questions, join <a href='https://hackclub.enterprise.slack.com/archives/C092D99G1RU' target='_blank' rel='noopener noreferrer'>#enclosure</a> on Hack Club Slack, we have an amazing community to answer your questions !"
     };
 
     questions.forEach(q => {
