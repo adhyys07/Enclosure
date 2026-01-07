@@ -3,16 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Enclosure — Hack Club YSWS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-
 <body>
-
-  <!-- HERO -->
   <section class="hero">
     <div class="ysws-badge">Hack Club · You Ship, We Ship</div>
     <h1>ENCLOSURE</h1>
@@ -20,18 +15,15 @@
       Design a <b>custom phone or tablet cover</b> in CAD.
       Make it protective, weird, minimal, chunky, or cursed.
     </p>
-    <div class="sub">
-      You design it → we 3D print it → we ship it to you.
-    </div>
+    <div class="sub">You design it → we 3D print it → we ship it to you.</div>
 
     <div class="buttons">
-      <button class="btn">Submit Your Design 🚀</button>
-      <button class="btn secondary">Design Guide ✏️</button>
+      <button class="btn" type="button">Submit Your Design 🚀</button>
+      <button class="btn secondary" type="button">Design Guide ✏️</button>
     </div>
   </section>
 
-  <!-- HOW IT WORKS -->
-  <section class="section">
+  <section class="section" id="how">
     <div class="container">
       <h2>How Enclosure Works</h2>
       <div class="section-note">aka: how plastic ends up at your door</div>
@@ -76,8 +68,7 @@
     </div>
   </section>
 
-  <!-- GALLERY -->
-  <section class="section">
+  <section class="section" id="gallery">
     <div class="container">
       <h2>Things Other People Made</h2>
       <div class="section-note">expect questionable design choices</div>
@@ -91,8 +82,7 @@
     </div>
   </section>
 
-  <!-- RULES -->
-  <section class="section">
+  <section class="section" id="rules">
     <div class="container">
       <h2>The Rules (sorry)</h2>
       <div class="section-note">we don’t like them either, but printers do</div>
@@ -108,10 +98,65 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
+  <section class="section">
+    <div class="container">
+        <h2>FAQ</h2>
+        <div class="section-note">Questions you keep asking </div>
+    </div>
+
+    <div class="faq">
+         <div class="faq-questions">
+        <div class="faq-q active">What exactly do I design?</div>
+        <div class="faq-q">Which devices are allowed?</div>
+        <div class="faq-q">Do I need a 3D printer?</div>
+        <div class="faq-q">What file format do I submit?</div>
+        <div class="faq-q">Is this actually free?</div>
+        <div class="faq-q">More Questions?</div>
+    </div>
+    <div class="faq-answers">
+        <h3>What exactly do I design?</h3>
+         <p>
+          You design a <b>phone or tablet enclosure</b> — basically a case or cover.
+          It can be protective, decorative, weird, chunky, minimal, or cursed.
+          As long as it’s an enclosure and printable, you’re good.
+        </p>
+    </div>
+    </div>
+    
+  </section>
+
   <footer>
     Enclosure is a Hack Club YSWS • made with plastic, patience, and poor life choices
   </footer>
 
+  <script>
+    const questions = document.querySelectorAll('.faq-q');
+    const title = document.querySelector('.faq-answers h3');
+    const text = document.querySelector('.faq-answers p');
+
+    const answers = {
+      "What exactly do I design?":
+        "You design a phone or tablet enclosure — basically a case or cover. It can be protective, decorative, weird, chunky, minimal, or cursed. As long as it’s an enclosure and printable, you’re good.",
+      "Which devices are allowed?":
+        "Most phones and tablets are allowed. If your device is extremely huge or oddly shaped, we may ask you to tweak the design.",
+      "Do I need a 3D printer?":
+        "Nope. That’s the whole point. You design it — we print it — we ship it to you.",
+      "What file format do I submit?":
+        "STL or STEP files are preferred. If you’re unsure, export STL and you’ll be fine.",
+      "Is this actually free?":
+        "Yes. This is a Hack Club You Ship, We Ship program. We cover printing and shipping.",
+      "More Questions?":
+        "If you have more questions, join <a href='https://hackclub.enterprise.slack.com/archives/C092D99G1RU' target='_blank' rel='noopener noreferrer'>#enclosure</a>."
+    };
+
+    questions.forEach(q => {
+      q.addEventListener('click', () => {
+        questions.forEach(x => x.classList.remove('active'));
+        q.classList.add('active');
+        title.textContent = q.textContent;
+        text.innerHTML = answers[q.textContent];
+      });
+    });
+  </script>
 </body>
 </html>
