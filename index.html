@@ -6,10 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
 </head>
 <body>
+  <a href="https://hackclub.com/"><img style="position: absolute; top: 0; left: 80px; border: 0; width: 220px; z-index: 999;" src="https://assets.hackclub.com/flag-orpheus-top.svg" alt="Hack Club"/></a>
   <section class="hero">
-    <div class="ysws-badge">Hack Club · You Ship, We Ship</div>
+    <div class="ysws-badge">Hack Club · CAD YSWS </div>
     <img class="hero-logo" src="assets/logo.png" alt="Enclosure logo">
     <p>
       <b>Design your cover,we 3D-print and ship it !
@@ -19,14 +21,14 @@
     <div class="sub">You design it → we 3D print it → we ship it to you.</div>
 
     <div class="buttons">
-      <button class="btn" type="button">Submit Your Design 🚀</button>
+      <a href="https://forms.hackclub.com/enclosure" target="_blank"><button class="btn" type="button">Submit Your Design 🚀</button></a>
       <button class="btn secondary" type="button">Design Guide ✏️</button>
     </div>
   </section>
 
   <section class="section" id="how">
     <div class="container">
-      <h2>How Enclosure Works</h2>
+      <h2>How Enclosure Works ?</h2>
       <div class="section-note">aka: how plastic ends up at your door</div>
 
       <div class="grid">
@@ -54,7 +56,7 @@
             Upload your CAD file through the submission form.
             We’ll sanity-check it before printing.
           </p>
-          <span class="tag">STL / STEP</span>
+          <span class="tag">STP / STEP</span>
         </div>
 
         <div class="card">
@@ -139,8 +141,8 @@
         <div class="rule-card">
           <div class="rule-icon">🎒</div>
           <div class="rule-body">
-            <h3>Hack Club age rules</h3>
-            <p>Standard Hack Club participation guidelines still apply. Keep it friendly.</p>
+            <h3>Age Restriction</h3>
+            <p>Anyone can participate who is 13-18 years old </p>
             <span class="rule-tag">play nice</span>
           </div>
         </div>
@@ -156,12 +158,13 @@
 
     <div class="faq">
          <div class="faq-questions">
-        <div class="faq-q active">What exactly do I design?</div>
-        <div class="faq-q">Which devices are allowed?</div>
-        <div class="faq-q">Do I need a 3D printer?</div>
-        <div class="faq-q">What file format do I submit?</div>
-        <div class="faq-q">Is this actually free?</div>
-        <div class="faq-q">More Questions?</div>
+      <div class="faq-q active" data-key="design">What exactly do I design?</div>
+      <div class="faq-q" data-key="devices">Which devices are allowed?</div>
+      <div class="faq-q" data-key="printer">Do I need a 3D printer?</div>
+      <div class="faq-q" data-key="hackatime">Is Hackatime required?</div>
+      <div class="faq-q" data-key="format">What file format do I submit?</div>
+      <div class="faq-q" data-key="free">Is this actually free?</div>
+      <div class="faq-q" data-key="more">More Questions?</div>
     </div>
     <div class="faq-answers">
         <h3>What exactly do I design?</h3>
@@ -185,26 +188,36 @@
     const text = document.querySelector('.faq-answers p');
 
     const answers = {
-      "What exactly do I design?":
+      design:
         "You design a phone or tablet enclosure — basically a case or cover. It can be protective, decorative, weird, chunky, minimal, or cursed. As long as it’s an enclosure and printable, you’re good.",
-      "Which devices are allowed?":
+      devices:
         "Most phones and tablets are allowed. If your device is extremely huge or oddly shaped, we may ask you to tweak the design.",
-      "Do I need a 3D printer?":
+      printer:
         "Nope. That’s the whole point. You design it — we print it — we ship it to you.",
-      "What file format do I submit?":
-        "STL or STEP files are preferred. If you’re unsure, export STL and you’ll be fine.",
-      "Is this actually free?":
+      hackatime:
+        "No. You can submit designs anytime through the form. Hackatime is just a great time to work on it with friends.",
+      format:
+        "STP or STEP files are preferred. If you’re unsure, export STP and you’ll be fine.",
+      free:
         "Yes. This is a Hack Club You Ship, We Ship program. We cover printing and shipping.",
-      "More Questions?":
+      more:
         "If you have more questions, join <a href='https://hackclub.enterprise.slack.com/archives/C092D99G1RU' target='_blank' rel='noopener noreferrer'>#enclosure</a> on Hack Club Slack, we have an amazing community to answer your questions !"
     };
+
+    // initialize with the first active question
+    const active = document.querySelector('.faq-q.active');
+    if (active && answers[active.dataset.key]) {
+      title.textContent = active.textContent.trim();
+      text.innerHTML = answers[active.dataset.key];
+    }
 
     questions.forEach(q => {
       q.addEventListener('click', () => {
         questions.forEach(x => x.classList.remove('active'));
         q.classList.add('active');
-        title.textContent = q.textContent;
-        text.innerHTML = answers[q.textContent];
+        const key = q.dataset.key;
+        title.textContent = q.textContent.trim();
+        text.innerHTML = answers[key] || '';
       });
     });
   </script>
