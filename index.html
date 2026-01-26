@@ -11,18 +11,37 @@
 <body>
   <a href="https://hackclub.com/"><img style="position: absolute; top: 0; left: 80px; border: 0; width: 220px; z-index: 999;" src="https://assets.hackclub.com/flag-orpheus-top.svg" alt="Hack Club"/></a>
   <section class="hero">
-    <div class="ysws-badge">Hack Club · CAD YSWS </div>
-    <img class="hero-logo" src="assets/logo.png" alt="Enclosure logo">
-    <p>
-      <b>Design your cover,we 3D-print and ship it !
-      Make it protective, weird, minimal, chunky, or cursed.
-      </b>
-    </p>
-    <div class="sub">You design it → we 3D print it → we ship it to you.</div>
+    <div class="hero-inner">
+      <a target="_blank" href="https://cad.hackclub.com"><div class="ysws-badge">Hack Club · CAD YSWS </div></a>
+      <div class="hero-visual">
+        <img class="hero-logo" src="assets/logo.png" alt="Enclosure logo">
+        <div class="covers-wrap">
+          <img class="cover-img cover-1" src="assets/covers/Case.png" alt="Enclosure cover example 1">
+          <img class="cover-img cover-2" src="assets/covers/case1.png" alt="Enclosure cover example 2">
+          <img class="cover-img cover-3" src="assets/covers/Case2png.png" alt="Enclosure cover example 3">
+          <img class="cover-img cover-4" src="assets/covers/Case3-.png" alt="Enclosure cover example 4">
+        </div>
+      </div>
+      <p>
+        <b>Design your cover,we 3D-print and ship it !
+        Make it protective, weird, minimal, chunky, or cursed.
+        </b>
+      </p>
+      <div class="sub">You design it → we 3D print it → we ship it to you.</div>
 
-    <div class="buttons">
-      <a href="https://forms.hackclub.com/enclosure" target="_blank"><button class="btn" type="button">Submit Your Design 🚀</button></a>
-      <button class="btn secondary" type="button">Design Guide ✏️</button>
+      <div class="buttons-wrap">
+        <div class="buttons">
+          <div class="buttons-row top">
+            <a href="https://forms.hackclub.com/enclosure" target="_blank"><button class="btn" type="button">Submit Your Design 🚀</button></a>
+            <a target="_blank" href="https://docs.google.com/presentation/d/e/2PACX-1vQpmTW_T9md56kegOqOYb9zAVv_upZSIxsNc59ueinncyolm_nHDyLXihWIRhBKb71LDOq6W_snMWBX/pub?start=false&loop=false&delayms=3000"><button class="btn secondary" type="button">Design Guide ✏️</button></a>
+          </div>
+          <div class="buttons-row bottom">
+            <a href="#gallery"><button class="btn secondary" type="button">View Gallery 🔎</button></a>
+            <a href="#rules"><button class="btn secondary" type="button">Requirements ✅</button></a>
+            <a href="#faq"><button class="btn secondary" type="button">FAQ ❓</button></a>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -150,7 +169,7 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="faq">
     <div class="container">
         <h2>FAQS</h2>
         <div class="section-note">Questions you keep asking </div>
@@ -195,7 +214,7 @@
       printer:
         "Nope. That’s the whole point. You design it — we print it — we ship it to you.",
       hackatime:
-        "No. You can submit designs anytime through the form. Hackatime is just a great time to work on it with friends.",
+        "No, Hackatime is not compulsory, although it is recommended.",
       format:
         "STP or STEP files are preferred. If you’re unsure, export STP and you’ll be fine.",
       free:
