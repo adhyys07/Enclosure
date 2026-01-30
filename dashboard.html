@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enclosure Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #34d399;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.1), transparent 25%),
+                  radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.12), transparent 25%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    h1 { margin: 0; font-size: 24px; letter-spacing: -0.01em; }
+    a { color: var(--accent); text-decoration: none; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input, textarea, select, button {
+      width: 100%;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 96px; }
+    button { cursor: pointer; font-weight: 600; background: linear-gradient(135deg, #22c55e, #16a34a); border: none; }
+    button:hover { filter: brightness(1.05); }
+    .stack { display: grid; gap: 12px; }
+    .projects { display: grid; gap: 8px; margin-top: 12px; }
+    .project-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0b1220;
+    }
+    .project-meta { display: grid; gap: 4px; }
+    .project-title { font-weight: 600; }
+    .project-desc { color: var(--muted); font-size: 13px; }
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: rgba(52, 211, 153, 0.12); color: var(--text); font-size: 12px; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .status-select { width: 140px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .error { color: #fca5a5; font-size: 13px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Enclosure Projects</h1>
+    <a href="/" aria-label="Back to site">← Back to site</a>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin-top:0;">Create project</h2>
+      <form id="create-form" class="stack">
+        <div>
+          <label for="name">Name *</label>
+          <input id="name" name="name" placeholder="Prototype case for Pixel" required />
+        </div>
+        <div>
+          <label for="description">Description</label>
+          <textarea id="description" name="description" placeholder="What makes this enclosure special?"></textarea>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="draft">Draft</option>
+            <option value="in-progress">In progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div>
+          <button type="submit">Save project</button>
+          <div id="form-error" class="error" hidden></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Projects</h2>
+      <div id="loading" class="muted">Loading projects…</div>
+      <div id="projects" class="projects"></div>
+      <div id="list-error" class="error" hidden></div>
+    </div>
+  </div>
+
+  <script>
+    const statuses = ["draft", "in-progress", "review", "done"];
+    const projectsEl = document.getElementById("projects");
+    const loadingEl = document.getElementById("loading");
+    const listErrorEl = document.getElementById("list-error");
+    const formErrorEl = document.getElementById("form-error");
+    const form = document.getElementById("create-form");
+
+    async function fetchJSON(url, options) {
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || res.statusText);
+      }
+      return res.json();
+    }
+
+    function renderProjects(rows) {
+      projectsEl.innerHTML = "";
+      if (!rows.length) {
+        projectsEl.innerHTML = '<div class="muted">No projects yet. Create one!</div>';
+        return;
+      }
+
+      for (const row of rows) {
+        const item = document.createElement("div");
+        item.className = "project-row";
+
+        const meta = document.createElement("div");
+        meta.className = "project-meta";
+        const title = document.createElement("div");
+        title.className = "project-title";
+        title.textContent = row.name;
+        const desc = document.createElement("div");
+        desc.className = "project-desc";
+        desc.textContent = row.description || "No description";
+        const statusPill = document.createElement("span");
+        statusPill.className = "pill";
+        statusPill.textContent = row.status || "draft";
+        meta.append(title, desc, statusPill);
+
+        const controls = document.createElement("div");
+        const select = document.createElement("select");
+        select.className = "status-select";
+        for (const s of statuses) {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = s;
+          if (s === row.status) opt.selected = true;
+          select.appendChild(opt);
+        }
+        select.addEventListener("change", async () => {
+          try {
+            await fetchJSON(`/api/projects/${row.id}/status`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: select.value })
+            });
+            await loadProjects();
+          } catch (err) {
+            alert("Failed to update: " + err.message);
+          }
+        });
+        controls.appendChild(select);
+
+        item.append(meta, controls);
+        projectsEl.appendChild(item);
+      }
+    }
+
+    async function loadProjects() {
+      listErrorEl.hidden = true;
+      loadingEl.hidden = false;
+      try {
+        const rows = await fetchJSON("/api/projects");
+        renderProjects(rows);
+      } catch (err) {
+        listErrorEl.textContent = err.message;
+        listErrorEl.hidden = false;
+      } finally {
+        loadingEl.hidden = true;
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      formErrorEl.hidden = true;
+      const data = {
+        name: form.name.value.trim(),
+        description: form.description.value.trim(),
+        status: form.status.value
+      };
+      if (!data.name) {
+        formErrorEl.textContent = "Name is required";
+        formErrorEl.hidden = false;
+        return;
+      }
+      try {
+        await fetchJSON("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        form.reset();
+        await loadProjects();
+      } catch (err) {
+        formErrorEl.textContent = err.message;
+        formErrorEl.hidden = false;
+      }
+    });
+
+    loadProjects();
+  </script>
+</body>
+</html>
