@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:4000";
+
 const faqItems = [
   {
     key: "design",
@@ -144,6 +146,9 @@ function Hero() {
               <a href="https://forms.hackclub.com/enclosure" target="_blank" rel="noreferrer">
                 <button className="btn" type="button">Submit Your Design 🚀</button>
               </a>
+              <button className="btn secondary" type="button" onClick={() => { window.location.href = `${API_BASE}/api/auth/login`; }}>
+                Log in with Hack Club
+              </button>
             </div>
             <div className="buttons-row bottom">
               <a

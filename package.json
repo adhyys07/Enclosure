@@ -26,6 +26,7 @@
     "url": "https://github.com/adhyys07/Enclosure/issues"
   },
   "dependencies": {
+    "better-auth": "^0.4.4",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",

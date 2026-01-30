@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react()],
   // Serve only the public assets folder, not the entire repo (avoids copying .git into dist)
   publicDir: "assets",
+  server: {
+    port: 5713,
+    host: true
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src")
