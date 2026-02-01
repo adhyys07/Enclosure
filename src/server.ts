@@ -4,12 +4,68 @@ import cors from "cors";
 import path from "node:path";
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { projects } from "./schema";
+import { projects, user as users } from "./schema";
+
+process.on("uncaughtException", (err) => {
+  console.error("[fatal] uncaught exception", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[fatal] unhandled rejection", reason);
+});
 
 const IDENTITY_HOST = process.env.HC_IDENTITY_HOST || "https://auth.hackclub.com";
 const IDENTITY_CLIENT_ID = process.env.HC_IDENTITY_CLIENT_ID || "";
 const IDENTITY_CLIENT_SECRET = process.env.HC_IDENTITY_CLIENT_SECRET || "";
-const IDENTITY_REDIRECT_URI = process.env.HC_IDENTITY_REDIRECT_URI || "http://localhost:5173/api/auth/callback/hc-identity";
+const IDENTITY_REDIRECT_URI = process.env.HC_IDENTITY_REDIRECT_URI || "http://localhost:4000/api/auth/callback";
+const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || "http://localhost:5713";
+const DEV_FORCE_ELIGIBLE = process.env.DEV_FORCE_ELIGIBLE?.toLowerCase();
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const CACHET_BASE = process.env.CACHET_BASE || "https://cachet.dunkirk.sh";
+async function fetchSlackAvatar(opts: { slackId?: string | null; email?: string | null }): Promise<string | undefined> {
+  // Try cachet first (no token needed) when we have a Slack user id
+  if (opts.slackId) {
+    try {
+      const res = await fetch(`${CACHET_BASE}/users/${opts.slackId}`);
+      if (res.ok) {
+        const data = (await res.json()) as { imageUrl?: string };
+        if (data.imageUrl) return data.imageUrl;
+      }
+    } catch {
+      // best-effort
+    }
+  }
+
+  if (!SLACK_BOT_TOKEN) return undefined;
+  const headers = { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, "Content-Type": "application/x-www-form-urlencoded" } as const;
+
+  // Prefer lookup by ID when available
+  if (opts.slackId) {
+    const res = await fetch("https://slack.com/api/users.info", {
+      method: "POST",
+      headers,
+      body: new URLSearchParams({ user: opts.slackId })
+    });
+    const data = (await res.json()) as { ok?: boolean; user?: { profile?: { image_512?: string; image_192?: string; image_72?: string } } };
+    if (data.ok && data.user?.profile) {
+      return data.user.profile.image_512 || data.user.profile.image_192 || data.user.profile.image_72;
+    }
+  }
+
+  if (opts.email) {
+    const res = await fetch("https://slack.com/api/users.lookupByEmail", {
+      method: "POST",
+      headers,
+      body: new URLSearchParams({ email: opts.email })
+    });
+    const data = (await res.json()) as { ok?: boolean; user?: { profile?: { image_512?: string; image_192?: string; image_72?: string } } };
+    if (data.ok && data.user?.profile) {
+      return data.user.profile.image_512 || data.user.profile.image_192 || data.user.profile.image_72;
+    }
+  }
+
+  return undefined;
+}
 
 const app = express();
 app.use(cors());
@@ -66,7 +122,6 @@ app.patch("/api/projects/:id/status", async (req, res) => {
   res.json(updated);
 });
 
-// --- Hack Club Identity OAuth ---
 app.get("/api/auth/login", (_req, res) => {
   if (!IDENTITY_CLIENT_ID) return res.status(500).send("Missing HC_IDENTITY_CLIENT_ID");
   const url = new URL("/oauth/authorize", IDENTITY_HOST);
@@ -106,15 +161,122 @@ app.get("/api/auth/callback", async (req, res) => {
     const meRes = await fetch(meUrl, {
       headers: { Authorization: `Bearer ${tokenJson.access_token}` }
     });
-    const meJson = meRes.ok ? await meRes.json() : null;
 
-    // Return tokens + profile to frontend for now (for testing). In production, set an httpOnly session cookie.
-    res.json({
-      token: tokenJson.access_token,
-      refreshToken: tokenJson.refresh_token,
-      expiresIn: tokenJson.expires_in,
-      profile: meJson
+    if (!meRes.ok) {
+      const detail = await meRes.text();
+      return res.status(502).json({ error: "profile fetch failed", detail });
+    }
+
+    const meJson = (await meRes.json()) as { identity?: Record<string, unknown> };
+    const identity = meJson.identity || {};
+    const identityId = typeof (identity as { id?: unknown }).id === "string" ? (identity as { id?: unknown }).id : undefined;
+    const identityEmail = typeof (identity as { email?: unknown }).email === "string"
+      ? (identity as { email?: unknown }).email
+      : typeof (identity as { primary_email?: unknown }).primary_email === "string"
+        ? (identity as { primary_email?: unknown }).primary_email
+        : typeof (identity as { primaryEmail?: unknown }).primaryEmail === "string"
+          ? (identity as { primaryEmail?: unknown }).primaryEmail
+          : undefined;
+
+    const identityName = typeof (identity as { name?: unknown }).name === "string"
+      ? (identity as { name?: unknown }).name
+      : (() => {
+          const first = typeof (identity as { first_name?: unknown }).first_name === "string"
+            ? (identity as { first_name?: unknown }).first_name
+            : typeof (identity as { firstName?: unknown }).firstName === "string"
+              ? (identity as { firstName?: unknown }).firstName
+              : "";
+          const last = typeof (identity as { last_name?: unknown }).last_name === "string"
+            ? (identity as { last_name?: unknown }).last_name
+            : typeof (identity as { lastName?: unknown }).lastName === "string"
+              ? (identity as { lastName?: unknown }).lastName
+              : "";
+          const full = `${first} ${last}`.trim();
+          return full || undefined;
+        })();
+    const slackId = typeof (identity as { slack_id?: unknown }).slack_id === "string" ? (identity as { slack_id?: unknown }).slack_id : undefined;
+    const verificationStatus = typeof (identity as { verification_status?: unknown }).verification_status === "string"
+      ? (identity as { verification_status?: unknown }).verification_status
+      : undefined;
+    const emailVerified = Boolean((identity as { email_verified?: unknown }).email_verified || (identity as { emailVerified?: unknown }).emailVerified);
+    let profilePicture = typeof (identity as { image?: unknown }).image === "string"
+      ? (identity as { image?: unknown }).image
+      : typeof (identity as { picture?: unknown }).picture === "string"
+        ? (identity as { picture?: unknown }).picture
+        : typeof (identity as { profile?: { image_512?: unknown; image?: unknown } }).profile?.image_512 === "string"
+          ? (identity as { profile?: { image_512?: unknown; image?: unknown } }).profile?.image_512
+          : typeof (identity as { profile?: { image?: unknown } }).profile?.image === "string"
+            ? (identity as { profile?: { image?: unknown } }).profile?.image
+            : undefined;
+
+    const rawEligible =
+      (identity as { ysws_eligible?: unknown }).ysws_eligible ??
+      (identity as { yswsEligible?: unknown }).yswsEligible ??
+      (identity as { eligible?: unknown }).eligible;
+
+    const isEligible =
+      typeof rawEligible === "string" ? rawEligible.toLowerCase() === "yes" : Boolean(rawEligible);
+
+    let effectiveEligible = isEligible;
+    if (DEV_FORCE_ELIGIBLE === "yes" || DEV_FORCE_ELIGIBLE === "true") effectiveEligible = true;
+    if (DEV_FORCE_ELIGIBLE === "no" || DEV_FORCE_ELIGIBLE === "false") effectiveEligible = false;
+
+    console.log("[auth] identity", {
+      id: identityId,
+      email: identityEmail,
+      slackId,
+      verificationStatus,
+      hasAccessToken: Boolean(tokenJson.access_token)
     });
+
+    if (identityId && identityEmail) {
+      const idValue = identityId as string;
+      const emailValue = identityEmail as string;
+      const existing = await db.select().from(users).where(eq(users.id, idValue)).limit(1);
+      const pickString = (val: unknown) => (typeof val === "string" ? val : null);
+      if (!profilePicture) {
+        const fetched: string | undefined = await fetchSlackAvatar({
+          slackId: typeof slackId === "string" ? slackId : null,
+          email: emailValue
+        });
+        profilePicture = fetched ?? profilePicture;
+      }
+      const basePayload: {
+        name: string | null;
+        email: string;
+        emailVerified: boolean;
+        image: string | null;
+        slackId: string | null;
+        verificationStatus: string | null;
+        identityToken: string | null;
+        refreshToken: string | null;
+        updatedAt: Date;
+      } = {
+        name: pickString(identityName ?? existing[0]?.name),
+        email: emailValue,
+        emailVerified,
+        image: pickString(profilePicture ?? existing[0]?.image),
+        slackId: pickString(slackId ?? existing[0]?.slackId),
+        verificationStatus: pickString(verificationStatus ?? existing[0]?.verificationStatus),
+        identityToken: typeof tokenJson.access_token === "string" ? tokenJson.access_token : existing[0]?.identityToken || null,
+        refreshToken: typeof tokenJson.refresh_token === "string" ? tokenJson.refresh_token : existing[0]?.refreshToken || null,
+        updatedAt: new Date()
+      };
+
+      if (existing.length) {
+        await db.update(users).set(basePayload).where(eq(users.id, idValue));
+        console.log("[auth] user updated", { id: idValue });
+      } else {
+        await db.insert(users).values({ ...basePayload, id: idValue, createdAt: new Date() });
+        console.log("[auth] user inserted", { id: idValue });
+      }
+    }
+
+    const redirectUrl = new URL("/dashboard", FRONTEND_BASE_URL);
+    redirectUrl.searchParams.set("eligible", effectiveEligible ? "yes" : "no");
+    if (!effectiveEligible) redirectUrl.searchParams.set("msg", "banned");
+
+    return res.redirect(302, redirectUrl.toString());
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: "auth callback failed", detail: message });
@@ -136,6 +298,25 @@ app.get("/api/auth/me", async (req, res) => {
     }
     const meJson = await meRes.json();
     res.json(meJson);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: "profile lookup failed", detail: message });
+  }
+});
+
+// Convenience: return the most recently seen user (for UI avatar without exposing tokens)
+app.get("/api/auth/profile", async (_req, res) => {
+  try {
+    const latest = await db.select().from(users).orderBy(desc(users.updatedAt)).limit(1);
+    if (!latest.length) return res.status(404).json({ error: "no user" });
+    const user = latest[0];
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      slackId: user.slackId
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: "profile lookup failed", detail: message });

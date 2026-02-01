@@ -15,7 +15,6 @@ function createAuth() {
       provider: "pg",
       schema,
     }),
-    // Ensure these custom columns are selected and included on `session.user`.
     user: {
       additionalFields: {
         slackId: createFieldAttribute("string", { required: false }),
@@ -38,7 +37,6 @@ function createAuth() {
             redirectURI: process.env.HC_IDENTITY_REDIRECT_URI!,
             // These claims are supported by the provider; scopes_supported lists at least openid/profile.
             scopes: ['profile', 'email', 'name', 'slack_id', 'verification_status'],
-            // add "basic_info" and "addresses" after being officialized
 
             getToken: async ({ code, redirectURI }) => {
               const clientId = process.env.HC_IDENTITY_CLIENT_ID!;

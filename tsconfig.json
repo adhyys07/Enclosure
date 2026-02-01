@@ -9,6 +9,6 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node", "react", "react-dom", "vite/client"]
   }
 }
