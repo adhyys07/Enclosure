@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import SettingsPage from "./pages/SettingsPage";
 import "../css/dashboard.css";
 
 const API_BASE = (() => {
@@ -33,10 +34,10 @@ type Profile = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboards", path: "/dashboard/home", icon: "📊", badge: "Pro" },
   { label: "Projects", path: "/dashboard/projects", icon: "📁" },
-  { label: "Reviews", path: "/dashboard/review", icon: "📝" },
   { label: "Users", path: "/dashboard/users", icon: "🧑‍🤝‍🧑" },
   { label: "Analytics", path: "/dashboard/stats", icon: "📈" },
-  { label: "Settings", path: "/dashboard/settings", icon: "⚙️" },
+  { label: "Reviews", path: "/dashboard/review", icon: "📝" }
+
 ];
 
 export default function Layout() {
@@ -47,6 +48,7 @@ export default function Layout() {
   const [displayName, setDisplayName] = useState<string | undefined>();
   const [email, setEmail] = useState<string | undefined>();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const isActive = useMemo(
     () => (path: string) => location.pathname.startsWith(path),
@@ -123,7 +125,16 @@ export default function Layout() {
 
        
 
-        <div className="profile-card" tabIndex={0} onClick={() => setIsProfileMenuOpen((v) => !v)} onBlur={() => setIsProfileMenuOpen(false)}>
+        <div
+          className="profile-card"
+          tabIndex={0}
+          onClick={() => setIsProfileMenuOpen((v) => !v)}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+              setIsProfileMenuOpen(false);
+            }
+          }}
+        >
           <div className="avatar-ring">
             <img
               src={avatarUrl || "https://avatar.iran.liara.run/public/boy"}
@@ -137,10 +148,27 @@ export default function Layout() {
           </div>
           {isProfileMenuOpen ? (
             <div className="profile-menu" role="menu">
-              <Link to="/dashboard/settings" role="menuitem" className="profile-menu-item">
+              <button
+                type="button"
+                role="menuitem"
+                className="profile-menu-item"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  setShowSettings(true);
+                }}
+              >
                 Settings
-              </Link>
-              <button type="button" className="profile-menu-item" onMouseDown={(e) => e.preventDefault()} onClick={handleLogout}>
+              </button>
+              <button
+                type="button"
+                className="profile-menu-item"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setIsProfileMenuOpen(false);
+                  handleLogout();
+                }}
+              >
                 Log out
               </button>
             </div>
@@ -151,6 +179,27 @@ export default function Layout() {
       <main className="dash-main">
         <Outlet />
       </main>
+
+      {showSettings ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <style>{`
+            .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: grid; place-items: center; z-index: 2000; padding: 16px; }
+            .modal-card { width: min(860px, 100%); max-height: 90vh; overflow: auto; background: var(--surface, #261812); border: 1px solid var(--border, rgba(255,255,255,0.12)); border-radius: 16px; box-shadow: var(--shadow, 0 12px 38px rgba(0,0,0,0.35)); padding: 18px; }
+            .modal-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: inherit; padding-bottom: 8px; margin-bottom: 12px; }
+            .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border, rgba(255,255,255,0.12)); background: var(--surface, #261812); color: var(--text, #fff4ec); cursor: pointer; }
+          `}</style>
+          <div className="modal-card">
+            <div className="modal-head">
+              <div>
+                <p className="muted">Account linkage</p>
+                <h3>Settings</h3>
+              </div>
+              <button className="btn" onClick={() => setShowSettings(false)}>Close</button>
+            </div>
+            <SettingsPage />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

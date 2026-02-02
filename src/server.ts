@@ -174,6 +174,15 @@ app.get("/api/auth/login", (_req, res) => {
   res.redirect(url.toString());
 });
 
+// Stateless logout: clear known cookies (best-effort) and bounce to the frontend root
+app.get("/api/auth/logout", (_req, res) => {
+  res.clearCookie("session");
+  res.clearCookie("hc_identity");
+  res.clearCookie("hackatime_token");
+  const redirectUrl = new URL("/", FRONTEND_BASE_URL);
+  res.redirect(302, redirectUrl.toString());
+});
+
 app.get("/api/auth/callback", async (req, res) => {
   const code = req.query.code as string | undefined;
   if (!code) return res.status(400).send("Missing code");
@@ -485,7 +494,9 @@ app.get("/api/auth/profile", async (_req, res) => {
       emailVerified: user.emailVerified,
       image: user.image,
       slackId: user.slackId,
-      role: user.role
+      role: user.role,
+      identityLinked: Boolean(user.id),
+      hackatimeLinked: Boolean(user.hackatimeAccessToken),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -493,7 +504,14 @@ app.get("/api/auth/profile", async (_req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, "..")));
+const clientPath = path.join(__dirname, "..", "dist");
+app.use(express.static(clientPath));
+
+// SPA fallback for client-side routing
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) return next();
+  res.sendFile(path.join(clientPath, "index.html"));
+});
 
 const PORT = Number(process.env.PORT) || 4000;
 app.listen(PORT, () => {
