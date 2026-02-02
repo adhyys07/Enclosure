@@ -505,6 +505,8 @@ app.get("/api/auth/profile", async (_req, res) => {
 });
 
 const clientPath = path.join(__dirname, "..", "dist");
+const assetsPath = path.join(__dirname, "..", "assets");
+app.use("/assets", express.static(assetsPath));
 app.use(express.static(clientPath));
 
 // SPA fallback for client-side routing (exclude api and auth)
