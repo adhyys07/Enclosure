@@ -507,9 +507,8 @@ app.get("/api/auth/profile", async (_req, res) => {
 const clientPath = path.join(__dirname, "..", "dist");
 app.use(express.static(clientPath));
 
-// SPA fallback for client-side routing
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api")) return next();
+// SPA fallback for client-side routing (exclude api and auth)
+app.get(/^(?!\/api\/).*/, (req, res) => {
   res.sendFile(path.join(clientPath, "index.html"));
 });
 
