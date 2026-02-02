@@ -1,6 +1,7 @@
 /// <reference types="react" />
 /// <reference types="vite/client" />
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 declare global {
   namespace JSX {
@@ -19,6 +20,11 @@ type Project = {
   status: ProjectStatus;
   createdAt?: string;
   updatedAt?: string;
+};
+
+type SubmitPayload = {
+  name: string;
+  email: string;
 };
 
 const STATUSES: ProjectStatus[] = ["draft", "in-progress", "review", "done"];
@@ -53,6 +59,14 @@ async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
   return text ? (JSON.parse(text) as T) : ({} as T);
 }
 
+async function submitProjectRecord(payload: SubmitPayload) {
+  return fetchJSON("/api/projects/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +75,8 @@ export default function ProjectsPage() {
   const [saving, setSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
 
   async function ensureAuth(err: Error & { status?: number }) {
     if (err.status === 401) {
@@ -87,6 +103,10 @@ export default function ProjectsPage() {
     loadProjects();
   }, []);
 
+  useEffect(() => {
+    setIsModalOpen(location.pathname.endsWith("/projects/new"));
+  }, [location.pathname]);
+
   async function submitProject(projectName: string) {
     setFormError(null);
 
@@ -106,9 +126,17 @@ export default function ProjectsPage() {
           status: "draft",
         }),
       });
+
+      // Also capture into created_projects
+      const profileRes = await fetchJSON<{ email?: string; name?: string }>("/api/auth/profile");
+      const email = profileRes.email || "";
+      if (email) {
+        await submitProjectRecord({ name: projectName.trim(), email });
+      }
       await loadProjects();
       setDraftName("");
       setIsModalOpen(false);
+      navigate("/dashboard/projects");
     } catch (err) {
       const e = err as Error & { status?: number };
       setFormError(e.message);
@@ -133,6 +161,10 @@ export default function ProjectsPage() {
     }
   }
 
+  const openProject = (id: number) => {
+    navigate(`/dashboard/projects?project_id=${id}`);
+  };
+
   return (
     <div className="projects-page">
       <style>{PAGE_CSS}</style>
@@ -151,7 +183,15 @@ export default function ProjectsPage() {
           >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
-         
+          <button
+            className="btn primary small"
+            onClick={() => {
+              setIsModalOpen(true);
+              navigate("/dashboard/projects/new");
+            }}
+          >
+            New project
+          </button>
         </div>
       </header>
 
@@ -172,49 +212,52 @@ export default function ProjectsPage() {
               Create a project to track submissions, status, and progress in one place.
             </p>
           </div>
-          <button className="btn primary" onClick={() => setIsModalOpen(true)}>
+          <button
+            className="btn primary"
+            onClick={() => navigate("/dashboard/projects/new")}
+          >
             Create project
           </button>
         </div>
       ) : (
-        <div className="card">
-          <div className="table-head">
-            <div>
-              <p className="eyebrow">{projects.length} active</p>
-              <h2>Projects</h2>
-            </div>
-            <span className="muted">Status updates save instantly</span>
-          </div>
-          <div className="project-table">
-            {projects.map((p) => (
-              <div key={p.id} className="project-row">
-                <div className="project-main">
-                  <div className="project-title">{p.name}</div>
-                  <div className="project-desc">{p.description || "No description"}</div>
-                  <span className={`pill pill-${p.status}`}>{labelForStatus(p.status)}</span>
-                </div>
-                <div className="project-actions">
-                  <label className="muted">Status</label>
-                  <select
-                    value={p.status}
-                    onChange={(e) => updateStatus(p.id, e.target.value as ProjectStatus)}
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {labelForStatus(s)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className="projects-grid">
+          {projects.map((p) => (
+            <div
+              key={p.id}
+              className="project-card clickable"
+              role="button"
+              tabIndex={0}
+              onClick={() => openProject(p.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") openProject(p.id);
+              }}
+            >
+              <div className="project-main">
+                <div className="project-title">{p.name}</div>
+                <div className="project-desc">{p.description || "No description"}</div>
+                <span className={`pill pill-${p.status}`}>{labelForStatus(p.status)}</span>
               </div>
-            ))}
-          </div>
+              <div className="project-actions" onClick={(e) => e.stopPropagation()}>
+                <label className="muted">Status</label>
+                <select
+                  value={p.status}
+                  onChange={(e) => updateStatus(p.id, e.target.value as ProjectStatus)}
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {labelForStatus(s)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {isModalOpen ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
-          <div className="modal-card">
+        <div className="modal-backdrop full" role="dialog" aria-modal="true">
+          <div className="modal-card full">
             <div className="modal-header">
               <div>
                 <p className="eyebrow">New</p>
@@ -223,25 +266,38 @@ export default function ProjectsPage() {
               <button
                 className="icon-btn"
                 aria-label="Close"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  navigate("/dashboard/projects");
+                }}
               >
                 x
               </button>
             </div>
             {formError ? <div className="alert error">{formError}</div> : null}
-            <label className="field">
-              <span>Project name</span>
-              <input
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder="Moonshot redesign"
-                autoFocus
-              />
-            </label>
-            <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setIsModalOpen(false)} disabled={saving}>
+            <div className="modal-body">
+              <label className="field">
+                <span>Project name</span>
+                <input
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  placeholder="Moonshot redesign"
+                  autoFocus
+                />
+              </label>
+            </div>
+            <div className="modal-actions full">
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  navigate("/dashboard/projects");
+                }}
+                disabled={saving}
+              >
                 Cancel
               </button>
+              <div className="spacer" />
               <button
                 className="btn primary"
                 disabled={saving || !draftName.trim()}
@@ -321,19 +377,33 @@ h1 {
   margin-bottom: 12px;
 }
 
-.project-table {
+.projects-grid {
   display: grid;
-  gap: 10px;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
-.project-row {
+.project-card {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-rows: 1fr auto;
   gap: 12px;
-  padding: 14px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: #1c120d;
+  min-height: 180px;
+  aspect-ratio: 4 / 3;
+}
+
+.project-card.clickable {
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.project-card.clickable:hover {
+  transform: translateY(-2px);
+  border-color: var(--nav-border);
+  background: #22150f;
 }
 
 .project-main {
@@ -454,6 +524,12 @@ h1 {
   padding: 16px;
 }
 
+.modal-backdrop.full {
+  background: linear-gradient(135deg, #1a0f0a, #0f0906);
+  display: block;
+  padding: 0;
+}
+
 .modal-card {
   background: var(--surface);
   border-radius: 16px;
@@ -466,10 +542,25 @@ h1 {
   gap: 14px;
 }
 
+.modal-card.full {
+  max-width: none;
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+  padding: 28px;
+  box-shadow: none;
+  grid-template-rows: auto 1fr auto;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.modal-body {
+  display: grid;
+  gap: 14px;
 }
 
 .icon-btn {
@@ -498,6 +589,16 @@ h1 {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.modal-actions.full {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+.spacer {
+  width: 100%;
 }
 
 .btn.ghost {

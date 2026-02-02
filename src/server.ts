@@ -4,7 +4,7 @@ import cors from "cors";
 import path from "node:path";
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { projects, user as users } from "./schema";
+import { projects, createdProjects, user as users } from "./schema";
 
 process.on("uncaughtException", (err) => {
   console.error("[fatal] uncaught exception", err);
@@ -19,9 +19,23 @@ const IDENTITY_CLIENT_ID = process.env.HC_IDENTITY_CLIENT_ID || "";
 const IDENTITY_CLIENT_SECRET = process.env.HC_IDENTITY_CLIENT_SECRET || "";
 const IDENTITY_REDIRECT_URI = process.env.HC_IDENTITY_REDIRECT_URI || "http://localhost:4000/api/auth/callback";
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || "http://localhost:5713";
+const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:4000";
+const SERVER_BASE_URL = process.env.SERVER_BASE_URL || (() => {
+  try {
+    return new URL(IDENTITY_REDIRECT_URI).origin;
+  } catch {
+    return "http://localhost:4000";
+  }
+})();
 const DEV_FORCE_ELIGIBLE = process.env.DEV_FORCE_ELIGIBLE?.toLowerCase();
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const CACHET_BASE = process.env.CACHET_BASE || "https://cachet.dunkirk.sh";
+const HACKATIME_HOST = process.env.HACKATIME_HOST || "https://hackatime.hackclub.com";
+const HACKATIME_CLIENT_ID = process.env.HACKATIME_CLIENT_ID || "";
+const HACKATIME_CLIENT_SECRET = process.env.HACKATIME_CLIENT_SECRET || "";
+const HACKATIME_REDIRECT_URI = process.env.HACKATIME_REDIRECT_URI || "http://localhost:4000/api/auth/hackatime/callback";
+const HACKATIME_SCOPE = process.env.HACKATIME_SCOPE || "profile read";
+const HACKATIME_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 async function fetchSlackAvatar(opts: { slackId?: string | null; email?: string | null }): Promise<string | undefined> {
   // Try cachet first (no token needed) when we have a Slack user id
   if (opts.slackId) {
@@ -68,7 +82,12 @@ async function fetchSlackAvatar(opts: { slackId?: string | null; email?: string 
 }
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: FRONTEND_BASE_URL,
+    credentials: true
+  })
+);
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
@@ -96,6 +115,29 @@ app.post("/api/projects", async (req, res) => {
     .returning();
 
   res.status(201).json(created);
+});
+
+// Capture submitted projects into created_projects
+app.post("/api/projects/submit", async (req, res) => {
+  const { name, email } = req.body || {};
+  if (!name || typeof name !== "string") return res.status(400).json({ error: "name is required" });
+  if (!email || typeof email !== "string") return res.status(400).json({ error: "email is required" });
+
+  try {
+    const [created] = await db
+      .insert(createdProjects)
+      .values({
+        name: name.trim(),
+        email: email.trim(),
+        createdAt: new Date()
+      })
+      .returning();
+
+    return res.status(201).json(created);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ error: "project submit failed", detail: message });
+  }
 });
 
 app.patch("/api/projects/:id/status", async (req, res) => {
@@ -229,10 +271,11 @@ app.get("/api/auth/callback", async (req, res) => {
       hasAccessToken: Boolean(tokenJson.access_token)
     });
 
+    let existing: typeof users.$inferSelect[] = [];
     if (identityId && identityEmail) {
       const idValue = identityId as string;
       const emailValue = identityEmail as string;
-      const existing = await db.select().from(users).where(eq(users.id, idValue)).limit(1);
+      existing = await db.select().from(users).where(eq(users.id, idValue)).limit(1);
       const pickString = (val: unknown) => (typeof val === "string" ? val : null);
       if (!profilePicture) {
         const fetched: string | undefined = await fetchSlackAvatar({
@@ -241,15 +284,24 @@ app.get("/api/auth/callback", async (req, res) => {
         });
         profilePicture = fetched ?? profilePicture;
       }
+      const pickRole = (val: unknown): "admin" | "reviewer" | "member" | null => {
+        return val === "admin" || val === "reviewer" || val === "member" ? val : null;
+      };
+
       const basePayload: {
         name: string | null;
         email: string;
         emailVerified: boolean;
         image: string | null;
         slackId: string | null;
+        role: "admin" | "reviewer" | "member" | null;
         verificationStatus: string | null;
         identityToken: string | null;
         refreshToken: string | null;
+        hackatimeAccessToken: string | null;
+        hackatimeRefreshToken: string | null;
+        hackatimeExpiresAt: Date | null;
+        hackatimeUserId: string | null;
         updatedAt: Date;
       } = {
         name: pickString(identityName ?? existing[0]?.name),
@@ -257,9 +309,14 @@ app.get("/api/auth/callback", async (req, res) => {
         emailVerified,
         image: pickString(profilePicture ?? existing[0]?.image),
         slackId: pickString(slackId ?? existing[0]?.slackId),
+        role: pickRole(existing[0]?.role ?? "member"),
         verificationStatus: pickString(verificationStatus ?? existing[0]?.verificationStatus),
         identityToken: typeof tokenJson.access_token === "string" ? tokenJson.access_token : existing[0]?.identityToken || null,
         refreshToken: typeof tokenJson.refresh_token === "string" ? tokenJson.refresh_token : existing[0]?.refreshToken || null,
+        hackatimeAccessToken: existing[0]?.hackatimeAccessToken || null,
+        hackatimeRefreshToken: existing[0]?.hackatimeRefreshToken || null,
+        hackatimeExpiresAt: existing[0]?.hackatimeExpiresAt || null,
+        hackatimeUserId: existing[0]?.hackatimeUserId || null,
         updatedAt: new Date()
       };
 
@@ -272,6 +329,20 @@ app.get("/api/auth/callback", async (req, res) => {
       }
     }
 
+    const hasValidHackatime =
+      existing.length &&
+      existing[0]?.hackatimeAccessToken &&
+      existing[0]?.hackatimeExpiresAt &&
+      new Date(existing[0].hackatimeExpiresAt).getTime() > Date.now();
+
+    const needsHackatime = identityId && !hasValidHackatime;
+    if (needsHackatime && HACKATIME_CLIENT_ID && HACKATIME_CLIENT_SECRET) {
+      const loginUrl = new URL("/api/auth/hackatime/login", SERVER_BASE_URL);
+      loginUrl.searchParams.set("user_id", identityId as string);
+      loginUrl.searchParams.set("continue", new URL("/dashboard", FRONTEND_BASE_URL).toString());
+      return res.redirect(302, loginUrl.toString());
+    }
+
     const redirectUrl = new URL("/dashboard", FRONTEND_BASE_URL);
     redirectUrl.searchParams.set("eligible", effectiveEligible ? "yes" : "no");
     if (!effectiveEligible) redirectUrl.searchParams.set("msg", "banned");
@@ -280,6 +351,103 @@ app.get("/api/auth/callback", async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: "auth callback failed", detail: message });
+  }
+});
+
+// Hackatime OAuth
+app.get("/api/auth/hackatime/login", (req, res) => {
+  if (!HACKATIME_CLIENT_ID) return res.status(500).send("Missing HACKATIME_CLIENT_ID");
+  const userId = (req.query.user_id as string | undefined) || "";
+  const cont = (req.query.continue as string | undefined) || FRONTEND_BASE_URL;
+  const statePayload = Buffer.from(JSON.stringify({ userId, cont }), "utf8").toString("base64url");
+  const url = new URL("/oauth/authorize", HACKATIME_HOST);
+  url.searchParams.set("client_id", HACKATIME_CLIENT_ID);
+  url.searchParams.set("redirect_uri", HACKATIME_REDIRECT_URI);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", HACKATIME_SCOPE);
+  url.searchParams.set("state", statePayload);
+  res.redirect(url.toString());
+});
+
+app.get("/api/auth/hackatime/callback", async (req, res) => {
+  const code = req.query.code as string | undefined;
+  const rawState = req.query.state as string | undefined;
+  if (!code) return res.status(400).send("Missing code");
+  if (!HACKATIME_CLIENT_ID || !HACKATIME_CLIENT_SECRET) {
+    return res.status(500).send("Missing Hackatime client id/secret");
+  }
+
+  let state: { userId?: string; cont?: string } = {};
+  try {
+    state = rawState ? (JSON.parse(Buffer.from(rawState, "base64url").toString("utf8")) as { userId?: string; cont?: string }) : {};
+  } catch {
+    // ignore bad state
+  }
+
+  const userId = state.userId;
+  const continueUrl = state.cont || FRONTEND_BASE_URL;
+
+  if (!userId) {
+    return res.status(400).send("Missing user_id in state");
+  }
+
+  try {
+    const tokenUrl = new URL("/oauth/token", HACKATIME_HOST);
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: HACKATIME_REDIRECT_URI,
+      client_id: HACKATIME_CLIENT_ID,
+      client_secret: HACKATIME_CLIENT_SECRET
+    });
+
+    const tokenRes = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+
+    const tokenJson = await tokenRes.json();
+    if (!tokenRes.ok || !tokenJson.access_token) {
+      console.error("[hackatime] token exchange failed", tokenRes.status, tokenJson);
+      return res.status(502).json({ error: "hackatime token exchange failed", status: tokenRes.status, detail: tokenJson });
+    }
+
+    const meUrl = new URL("/api/v1/authenticated/me", HACKATIME_HOST);
+    const meRes = await fetch(meUrl, {
+      headers: {
+        Authorization: `Bearer ${tokenJson.access_token}`,
+        Accept: "application/json"
+      }
+    });
+    if (!meRes.ok) {
+      const detail = await meRes.text();
+      console.error("[hackatime] profile fetch failed", meRes.status, detail);
+      return res.status(502).json({ error: "hackatime profile fetch failed", status: meRes.status, detail });
+    }
+    const meJson = (await meRes.json()) as { id?: number | string };
+    const hackatimeUserId = meJson?.id ? String(meJson.id) : null;
+
+    const expiresAt = new Date(Date.now() + HACKATIME_TOKEN_TTL_MS);
+
+    await db
+      .update(users)
+      .set({
+        hackatimeAccessToken: typeof tokenJson.access_token === "string" ? tokenJson.access_token : null,
+        hackatimeRefreshToken: typeof tokenJson.refresh_token === "string" ? tokenJson.refresh_token : null,
+        hackatimeExpiresAt: expiresAt,
+        hackatimeUserId,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+
+    console.log("Oauth Successful 1", { userId, hackatimeUserId });
+
+    const redirectUrl = new URL(continueUrl);
+    res.redirect(302, redirectUrl.toString());
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: "hackatime callback failed", detail: message });
   }
 });
 
@@ -314,8 +482,10 @@ app.get("/api/auth/profile", async (_req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      emailVerified: user.emailVerified,
       image: user.image,
-      slackId: user.slackId
+      slackId: user.slackId,
+      role: user.role
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

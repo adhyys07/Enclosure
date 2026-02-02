@@ -248,7 +248,7 @@ function Hero({
                   Design Guide ✏️
                 </button>
               </a>
-              <a href="#workshop">
+              <a target="_blank"href="https://hackclub.enterprise.slack.com/archives/C092D99G1RU">
                 <button className="btn secondary" type="button">
                   Join Slack🛠️
                 </button>
@@ -390,12 +390,9 @@ export default function App() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/auth/me`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          setAuthed(true);
-        }
+        // Use profile as a lightweight presence check (no token needed)
+        const res = await fetch(`${API_BASE}/api/auth/profile`);
+        if (res.ok) setAuthed(true);
       } catch (_err) {
         setAuthed(false);
       }
