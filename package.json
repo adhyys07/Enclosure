@@ -10,12 +10,12 @@
     "preview": "vite preview",
     "drizzle:generate": "drizzle-kit generate:pg",
     "drizzle:push": "drizzle-kit push",
-    "start": "node dist-server/server.js",
-    "dev:server": "ts-node src/server.ts",
-    "dev:api": "ts-node src/server.ts",
-    "build:server": "tsc -p tsconfig.server.json",
-    "start:prod": "node dist-server/server.js",
-    "heroku-postbuild": "npm run build && npm run build:server"
+    "start": "vite preview --host --port 3000",
+    "dev:server": "echo \"server removed on main branch\"",
+    "dev:api": "echo \"server removed on main branch\"",
+    "build:server": "echo \"server removed on main branch\"",
+    "start:prod": "echo \"server removed on main branch\"",
+    "heroku-postbuild": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "better-auth": "^0.4.4",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
