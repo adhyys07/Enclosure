@@ -5,7 +5,11 @@ const API_BASE = (() => {
   if (env) return env;
   if (typeof window !== "undefined") {
     const url = new URL(window.location.href);
-    if (url.port === "5713") url.port = "4000";
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      url.port = "4000";
+    } else if (url.port === "5713") {
+      url.port = "4000";
+    }
     url.pathname = "";
     url.search = "";
     url.hash = "";
@@ -20,7 +24,7 @@ const faqItems = [
     question: "What exactly do I design?",
     answer: (
       <p>
-        You design a <b>phone or tablet enclosure</b> — basically a case or
+        You design a <b>enclosure for any device</b> — basically a case or
         cover. It can be protective, decorative, weird, chunky, minimal, or
         cursed. As long as it is an enclosure and printable, you are good.
       </p>
@@ -89,7 +93,7 @@ const faqItems = [
 const steps = [
   {
     title: "1. Measure 📏",
-    body: "Measure your phone or tablet carefully. Button cutouts, camera bumps, ports — all that good stuff.",
+    body: "Measure your device. Button cutouts, camera bumps, ports — all that good stuff.",
     tag: "accuracy matters",
   },
   {
@@ -192,7 +196,7 @@ function Hero({
         </div>
         <p>
           <b>
-            Design your cover, we 3D-print and ship it! Make it protective,
+            Design your enclosure for any device, we 3D-print and ship it! Make it protective,
             weird, minimal, chunky, or cursed.
           </b>
         </p>
@@ -216,6 +220,25 @@ function Hero({
         <div className="buttons-wrap">
           <div className="buttons">
             <div className="buttons-row top">
+              <a
+                href="https://forms.hackclub.com/enclosure"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <button className="btn" type="button">
+                  Submit Your Design !
+                </button>
+              </a>
+              <button
+                className="btn"
+                type="button"
+                onClick={() => {
+                  const continueUrl = encodeURIComponent(window.location.href);
+                  window.location.href = `${API_BASE}/api/auth/login?continue=${continueUrl}`;
+                }}
+              >
+                Authenticate with Hack Club
+              </button>
               {authed ? (
                 <button
                   className="btn"
@@ -226,17 +249,7 @@ function Hero({
                 >
                   Go to Dashboard →
                 </button>
-              ) : (
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => {
-                    window.location.href = `${API_BASE}/api/auth/login`;
-                  }}
-                >
-                  Log in with Hack Club
-                </button>
-              )}
+              ) : null}
             </div>
             <div className="buttons-row bottom">
               <a
@@ -253,6 +266,15 @@ function Hero({
                   Join Slack🛠️
                 </button>
               </a>
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href="https://workshops.hackclub.com/"
+              >
+                <button className="btn secondary" type="button">
+                  Run a workshop 🎤
+                </button>
+              </a>
             </div>
           </div>
         </div>
@@ -265,7 +287,7 @@ function HowItWorks() {
   return (
     <section className="section" id="how">
       <div className="container">
-        <h2>How Enclosure Works?</h2>
+        <h2>HOW ENCLOSURE WORKS ?</h2>
         <div className="section-note">
           aka: how plastic ends up at your door
         </div>
@@ -287,7 +309,7 @@ function Gallery() {
   return (
     <section className="section" id="gallery">
       <div className="container">
-        <h2>Things Other People Made</h2>
+        <h2>THINGS OTHER PEOPLE MADE</h2>
         <div className="section-note">expect questionable design choices</div>
         <div className="gallery-locked">
           <div className="grid">
@@ -297,6 +319,163 @@ function Gallery() {
             <div className="gallery-box" />
           </div>
           <div className="lock-overlay">🔒 Coming soon</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Shop() {
+  const tiers = [
+    {
+      title: "0–19 hour picks",
+      direction: "normal" as const,
+      items: [
+        { label: "Sticker pack", note: "fresh vinyl", img: "https://placehold.co/200x140?text=Stickers" },
+        { label: "Keycaps", note: "HC set", img: "https://placehold.co/200x140?text=Keycaps" },
+        { label: "3D print credit", note: "$10", img: "https://placehold.co/200x140?text=3D+Print" },
+        { label: "Zombo domain", note: "1yr", img: "https://placehold.co/200x140?text=Domain" },
+        { label: "Hot chocolate", note: "treat", img: "https://placehold.co/200x140?text=Treat" },
+        { label: "HackDucky", note: "fun", img: "https://placehold.co/200x140?text=Ducky" },
+        { label: "Smolāj", note: "squish", img: "https://placehold.co/200x140?text=Plush" },
+        { label: "Pinecil", note: "solder", img: "https://placehold.co/200x140?text=Iron" },
+        { label: "Notebook", note: "grid", img: "https://placehold.co/200x140?text=Notebook" },
+      ],
+    },
+    {
+      title: "20–99 hour prizes",
+      direction: "reverse" as const,
+      items: [
+        { label: "Raspberry Pi 5", note: "48h", img: "https://placehold.co/200x140?text=Pi+5" },
+        { label: "2TB SSD", note: "storage", img: "https://placehold.co/200x140?text=SSD" },
+        { label: "Open Source tix", note: "2026", img: "https://placehold.co/200x140?text=Tickets" },
+        { label: "Raspberry Pi 500", note: "desktop", img: "https://placehold.co/200x140?text=Pi+500" },
+        { label: "Magic Keyboard", note: "wireless", img: "https://placehold.co/200x140?text=Keyboard" },
+        { label: "Flipper Zero", note: "hacks", img: "https://placehold.co/200x140?text=Flipper" },
+        { label: "Yubikey", note: "security", img: "https://placehold.co/200x140?text=YubiKey" },
+        { label: "CMF Buds", note: "audio", img: "https://placehold.co/200x140?text=Earbuds" },
+      ],
+    },
+    {
+      title: "100+ hour prizes",
+      direction: "normal" as const,
+      items: [
+        { label: "Bambu Lab A1 mini", note: "printer", img: "https://placehold.co/200x140?text=Printer" },
+        { label: "Pebble Time 2", note: "classic", img: "https://placehold.co/200x140?text=Watch" },
+        { label: "Proxmark 3", note: "RFID", img: "https://placehold.co/200x140?text=RFID" },
+        { label: "Quest 3", note: "VR", img: "https://placehold.co/200x140?text=VR" },
+        { label: "Mac Mini", note: "desktop", img: "https://placehold.co/200x140?text=Mac+Mini" },
+        { label: "Nothing headphones", note: "ANC", img: "https://placehold.co/200x140?text=Headphones" },
+        { label: "AMS Lite", note: "robot", img: "https://placehold.co/200x140?text=Robot" },
+      ],
+    },
+  ];
+
+  return (
+    <section className="section" id="shop">
+      <div className="container">
+        <h2>SHOP</h2>
+        <div className="section-note">prizes to power up your next build</div>
+        <style>{`
+          .shop-rail { margin: 16px 0 28px; border: 2px dashed var(--border); border-radius: 14px; background: rgba(255,183,3,0.08); overflow: hidden; position: relative; }
+          .shop-rail h4 { margin: 10px 14px; font-family: 'Patrick Hand', cursive; font-size: 1.2rem; color: var(--accent2); }
+          .shop-track { display: flex; gap: 16px; padding: 0 14px 16px 14px; animation: shop-scroll 28s linear infinite; width: max-content; }
+          .shop-rail.reverse .shop-track { animation-direction: reverse; }
+          .shop-card { min-width: 220px; background: var(--card); border: 2px dashed var(--border); border-radius: 14px; padding: 12px; box-shadow: 4px 4px 0 #000; transform: rotate(-1deg); display: grid; gap: 8px; flex: 0 0 auto; }
+          .shop-card:nth-child(even) { transform: rotate(1deg); }
+          .shop-card h5 { margin: 0 0 6px; font-family: 'Patrick Hand', cursive; font-size: 1.1rem; }
+          .shop-card .note { color: var(--muted); font-size: 0.9rem; }
+          .shop-img { width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; border: 2px solid var(--border); background: #1c120d; }
+          .shop-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+          @keyframes shop-scroll { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--scroll-distance, 50%))); } }
+        `}</style>
+        {tiers.map((tier, idx) => {
+          const repeats = 2;
+          const rowItems = Array.from({ length: repeats }, () => tier.items).flat();
+          const scrollDistance = 100 / repeats;
+          return (
+            <div key={tier.title} className={`shop-rail ${tier.direction === "reverse" ? "reverse" : ""}`}>
+              <h4>{tier.title}</h4>
+              <div
+                className="shop-track"
+                style={{
+                  animationDuration: `${14 + idx * 3}s`,
+                  // @ts-expect-error custom property
+                  "--scroll-distance": `${scrollDistance}%`
+                }}
+              >
+                {rowItems.map((item, i) => (
+                  <div key={`${item.label}-${i}`} className="shop-card">
+                    <div className="shop-img" aria-hidden>
+                      <img src={item.img} alt="" />
+                    </div>
+                    <h5>{item.label}</h5>
+                    <div className="note">{item.note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="buttons-row" style={{ marginTop: 12, justifyContent: "center" }}>
+        <button
+          className="btn"
+          type="button"
+          onClick={() => {
+            window.location.href = "/shop.html";
+          }}
+        >
+          View full shop ↓
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ShopFull() {
+  const items = [
+    { title: "Sticker pack", note: "fresh vinyl", img: "https://placehold.co/240x160?text=Stickers" },
+    { title: "Keycaps", note: "HC set", img: "https://placehold.co/240x160?text=Keycaps" },
+    { title: "3D print credit", note: "$10", img: "https://placehold.co/240x160?text=3D+Print" },
+    { title: "Zombo domain", note: "1yr", img: "https://placehold.co/240x160?text=Domain" },
+    { title: "Hot chocolate", note: "treat", img: "https://placehold.co/240x160?text=Treat" },
+    { title: "HackDucky", note: "fun", img: "https://placehold.co/240x160?text=Ducky" },
+    { title: "Smolāj", note: "squish", img: "https://placehold.co/240x160?text=Plush" },
+    { title: "Pinecil", note: "solder", img: "https://placehold.co/240x160?text=Iron" },
+    { title: "Notebook", note: "grid", img: "https://placehold.co/240x160?text=Notebook" },
+    { title: "Raspberry Pi 5", note: "48h", img: "https://placehold.co/240x160?text=Pi+5" },
+    { title: "2TB SSD", note: "storage", img: "https://placehold.co/240x160?text=SSD" },
+    { title: "Open Source tix", note: "2026", img: "https://placehold.co/240x160?text=Tickets" },
+    { title: "Raspberry Pi 500", note: "desktop", img: "https://placehold.co/240x160?text=Pi+500" },
+    { title: "Magic Keyboard", note: "wireless", img: "https://placehold.co/240x160?text=Keyboard" },
+    { title: "Flipper Zero", note: "hacks", img: "https://placehold.co/240x160?text=Flipper" },
+    { title: "Yubikey", note: "security", img: "https://placehold.co/240x160?text=YubiKey" },
+    { title: "CMF Buds", note: "audio", img: "https://placehold.co/240x160?text=Earbuds" },
+    { title: "Bambu Lab A1 mini", note: "printer", img: "https://placehold.co/240x160?text=Printer" },
+    { title: "Pebble Time 2", note: "classic", img: "https://placehold.co/240x160?text=Watch" },
+    { title: "Proxmark 3", note: "RFID", img: "https://placehold.co/240x160?text=RFID" },
+    { title: "Quest 3", note: "VR", img: "https://placehold.co/240x160?text=VR" },
+    { title: "Mac Mini", note: "desktop", img: "https://placehold.co/240x160?text=Mac+Mini" },
+    { title: "Nothing headphones", note: "ANC", img: "https://placehold.co/240x160?text=Headphones" },
+    { title: "AMS Lite", note: "robot", img: "https://placehold.co/240x160?text=Robot" },
+  ];
+
+  return (
+    <section className="section" id="shop-full">
+      <div className="container">
+        <h2>Full Shop</h2>
+        <div className="section-note">browse everything without the scroll</div>
+        <div className="grid">
+          {items.map((item) => (
+            <div key={item.title} className="card">
+              <div className="shop-img" aria-hidden>
+                <img src={item.img} alt="" />
+              </div>
+              <h3>{item.title}</h3>
+              <p className="muted">{item.note}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -392,9 +571,17 @@ export default function App() {
       try {
         // Use profile as a lightweight presence check (no token needed)
         const res = await fetch(`${API_BASE}/api/auth/profile`);
-        if (res.ok) setAuthed(true);
+        if (res.ok) {
+          setAuthed(true);
+          return;
+        }
       } catch (_err) {
         setAuthed(false);
+      }
+
+      if (params.get("auth") !== "ok") {
+        const continueUrl = encodeURIComponent(window.location.href);
+        window.location.href = `${API_BASE}/api/auth/login?continue=${continueUrl}`;
       }
     })();
   }, []);
@@ -417,6 +604,7 @@ export default function App() {
       </a>
       <Hero authed={authed} authMessage={authMessage} />
       <HowItWorks />
+      <Shop />
       <Gallery />
       <Requirements />
       <FAQ />

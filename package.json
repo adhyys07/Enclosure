@@ -11,11 +11,11 @@
     "drizzle:generate": "drizzle-kit generate:pg",
     "drizzle:push": "drizzle-kit push",
     "start": "vite preview --host --port 3000",
-    "dev:server": "echo \"server removed on main branch\"",
-    "dev:api": "echo \"server removed on main branch\"",
-    "build:server": "echo \"server removed on main branch\"",
-    "start:prod": "echo \"server removed on main branch\"",
-    "heroku-postbuild": "npm run build"
+    "dev:server": "ts-node -P tsconfig.server.json src/server.ts",
+    "dev:api": "ts-node -P tsconfig.server.json src/server.ts",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start:prod": "node dist-server/server.js",
+    "heroku-postbuild": "npm run build && npm run build:server"
   },
   "repository": {
     "type": "git",
@@ -41,6 +41,7 @@
     "react-router-dom": "^6.23.1"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.1.0",
